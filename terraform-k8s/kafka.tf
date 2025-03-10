@@ -12,7 +12,7 @@ resource "helm_release" "kafka" {
     values = [
             <<-EOF
         controller:
-            replicaCount: 3
+            replicaCount: 1
             automountServiceAccountToken: true
 
         externalAccess:
@@ -20,10 +20,19 @@ resource "helm_release" "kafka" {
             controller:
                 service:
                     type: NodePort
-                    ports:
-                        external: 9094
-            autoDiscovery:
-                enabled: true
+                    externalIPs:
+                        - "192.168.49.2"
+                    nodePorts:
+                        - "31001"
+            broker:
+                service:
+                    type: NodePort
+                    externalIPs:
+                        - "192.168.49.2"
+                    nodePorts:
+                        - "31004"
+
+
 
         serviceAccount:
             create: true
@@ -36,14 +45,54 @@ resource "helm_release" "kafka" {
                 protocol: PLAINTEXT
             controller:
                 protocol: PLAINTEXT
+            external:
+                protocol: PLAINTEXT
+            advertisedListener:  "EXTERNAL://192.168.49.2:31004"
 
         broker:
+            replicaCount: 1
             automountServiceAccountToken: true
 
         topic:
             autoCreate: true
         EOF
     ]
+}
+
+
+resource "kubernetes_job" "create_kafka_topic" {
+  metadata {
+    name = "create-kafka-topic-job"
+  }
+
+  depends_on = [ helm_release.kafka ]
+
+  spec {
+    template {
+      metadata {
+        labels = {
+          app = "kafka-topic-creator"
+        }
+      }
+
+      spec {
+        # thực ra có thể kết nối dạng internal ip, nhưng ở đây để test external ip với mục đích mở rộng và phát triển
+        container {
+          name  = "kafka-client"
+          image = "bitnami/kafka:latest" # Sử dụng image Kafka từ Bitnami
+          command = [
+            "/bin/sh",
+            "-c",
+            "kafka-topics.sh --create --topic money_transfer --bootstrap-server 192.168.49.2:31004 --partitions 3 --replication-factor 1"
+          ]
+        }
+
+        restart_policy = "Never"
+      }
+    }
+
+    backoff_limit = 2
+  }
 }
 
 
@@ -57,7 +106,7 @@ resource "kubernetes_deployment" "kafdrop" {
     }
 
     depends_on = [ 
-        helm_release.kafka
+        kubernetes_job.create_kafka_topic
     ]
 
     spec {
