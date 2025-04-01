@@ -63,6 +63,7 @@ resource "helm_release" "kafka" {
 resource "kubernetes_job" "create_kafka_topic" {
   metadata {
     name = "create-kafka-topic-job"
+    namespace  =  "${var.streaming_pipeline_namespace}"
   }
 
   depends_on = [ helm_release.kafka ]

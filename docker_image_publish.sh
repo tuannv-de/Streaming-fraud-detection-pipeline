@@ -12,3 +12,7 @@ echo ">> Money Transfer Kafka Producer"
 cd ../producer
 docker build -t grunklestan/money_transfer_producer:latest .
 docker push grunklestan/money_transfer_producer:latest
+
+cd ../spark_streaming
+docker build -t grunklestan/money_transfer_spark_stream_processor:latest .
+docker push grunklestan/money_transfer_spark_stream_processor:latest 

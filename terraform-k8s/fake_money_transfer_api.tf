@@ -7,7 +7,7 @@ resource "kubernetes_deployment" "fake_transfer_money_api" {
     }
   }
 
-  depends_on = [ kubernetes_namespace.pipeline_namespace ]
+  depends_on = [ kubernetes_manifest.spark_application ]
 
   spec {
     replicas = 1

@@ -22,15 +22,6 @@ def send_to_kafka(topic_name, data):
 
 
 def main():
-    # session = requests.Session()
-    # response = session.get(SSE_API_URL, stream=True)
-
-    # client = sseclient.SSEClient(response)
-    
-    # print("Producer is listening...")
-
-    # for event in client.events():
-
     messages = SSEClient(SSE_API_URL)
 
     for message in messages:    
