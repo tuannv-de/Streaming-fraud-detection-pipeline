@@ -7,21 +7,25 @@ Nguồn phát dữ liệu là một Realtime API giả lập xuất ra dữ li�
 ## **Architecture**
 ![Pipeline Image](https://github.com/user-attachments/assets/1d9bc6df-e5cb-4a3d-9240-38752102421d)
 
+  
 ## **Dashboard**
 
 ![recording-2025-04-04-20-43-13online-video-cutter com-ezgif com-crop](https://github.com/user-attachments/assets/8ec9cc5a-74cd-402e-ab61-b3ae97847f79)
 
 
+  
 ## **Spark Performance - Processing Latency <1s (~800ms)**
 
 ![Screenshot 2025-04-04 204936](https://github.com/user-attachments/assets/5e63eade-e7d2-4a79-9a87-bd0698dca257)
 
 
+  
 ## **Alert - Alert Email**
 
 ![image](https://github.com/user-attachments/assets/ce0422ed-39db-4b69-b39b-f3829f44d0b0)
 
 
+  
 ## **Setup & Deployment**
 
 ### 1. Yêu cầu:
@@ -36,7 +40,9 @@ terraform init
 terraform plan
 terraform apply -auto-approve
 terraform destroy -auto-approve  # (nếu cần gỡ cài đặt pipeline)
-
+```
+  
+  
 ## **Potential Improvements**
 
 1. Nâng cao thuật toán nhận diện. Đây mới là bản cơ sở của hệ thống nhận diện giao dịch đáng ngờ, mục tiêu của tôi vẫn là xây dựng một ml model trong tương lai phục vụ cho việc nhận diện. Đó là lí do tại sao tôi lại lưu dữ liệu ra Cassandra
