@@ -21,13 +21,26 @@ resource "helm_release" "grafana" {
   version = "8.10.3"
   namespace = "${var.streaming_pipeline_namespace}"
 
-  depends_on = [ helm_release.prometheus ]
+  depends_on = [ kubernetes_deployment.money_transfer_producer ]
 
   values = [
-    <<EOF
-grafana.ini:
-  dashboards:
-    min_refresh_interval: 1s
-EOF
+    file("values_grafana.yaml")
   ]
+}
+
+
+resource "kubernetes_config_map" "suspicious_transaction_dashboard" {
+  metadata {
+    name = "suspicious-transaction-dashboard"
+    namespace = "${var.streaming_pipeline_namespace}"
+    labels = {
+      grafana_dashboard = "1" 
+    }
+  }
+
+  depends_on = [ kubernetes_namespace.pipeline_namespace ]
+
+  data = {
+    "suspicious-transaction-dashboard.json" = file("../grafana/dashboards/suspicious-transaction-dashboard.json")
+  }
 }

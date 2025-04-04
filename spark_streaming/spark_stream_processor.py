@@ -9,33 +9,46 @@ PUSHGATEWAY_URL = os.getenv("PUSHGATEWAY_URL", "prometheus-prometheus-pushgatewa
 KAFKA_BROKERCONNECT = os.getenv("KAFKA_BROKERCONNECT", "kafka:9092")
 
 
-def process_batch(batch_df, batch_id):  
+def push_suspicious_transaction_count_to_pushgateway (batch_id, count):
+    print(f"Batch {batch_id}: count = {count}")
 
-    if batch_df.rdd.isEmpty():
-        print(f"Batch {batch_id} rỗng.")
-        return
+    registry = CollectorRegistry()
+    gauge_count = Gauge('suspicious_transaction_count', 'Số lượng giao dịch bị nghi ngờ trong batch', registry=registry)
+    gauge_count.set(count)
+    push_to_gateway(PUSHGATEWAY_URL, job='suspicious_transaction_job', registry=registry)
 
-    agg_df = batch_df.agg(
-        count("*").alias("transaction_count")
-    )
-    result = agg_df.collect()[0]
-    transaction_count = result["transaction_count"]
+    print(f"Đã đẩy metric của batch {batch_id} lên Pushgateway ({PUSHGATEWAY_URL}).")
 
-    print(f"Batch {batch_id}: count = {transaction_count}")
 
-    # Đẩy metric lên Pushgateway
-    try:
-        
+def process_batch(batch_df, batch_id): 
+    try: 
+        suspicious_transaction_count = 0
 
-        registry = CollectorRegistry()
+        if batch_df.rdd.isEmpty():
+            push_suspicious_transaction_count_to_pushgateway(batch_id, suspicious_transaction_count)
+            return
 
-        gauge_count = Gauge('transaction_count', 'Số lượng giao dịch trong batch', registry=registry)
+        #processing
+        suspicious_df = batch_df.filter(
+            (col("amount") > 1000000000) |
+            ((col("amount") > 500000000) & (hour(col("timestamp")) >= 1) & (hour(col("timestamp")) < 6))
+        )
 
-        gauge_count.set(transaction_count)
+        suspicious_df.coalesce(1).write \
+            .format("org.apache.spark.sql.cassandra") \
+            .option("keyspace", "money_keyspace") \
+            .option("table", "transactions") \
+            .mode("append") \
+            .save()
 
-        push_to_gateway(PUSHGATEWAY_URL, job='transaction_job', registry=registry)
+        agg_df = suspicious_df.agg(
+            count("*").alias("suspicious_transaction_count")
+        )
+        result = agg_df.first()
+        suspicious_transaction_count = result["suspicious_transaction_count"]
 
-        print(f"Đã đẩy metric của batch {batch_id} lên Pushgateway ({PUSHGATEWAY_URL}).")
+        push_suspicious_transaction_count_to_pushgateway(batch_id, suspicious_transaction_count)
+
     except Exception as e:
         print(f"Lỗi khi đẩy metric của batch {batch_id}: {e}")
 
@@ -53,7 +66,16 @@ def main():
 
     array_schema = ArrayType(schema)
 
-    spark = SparkSession.builder.appName("TransactionStreaming").getOrCreate()
+    # spark = SparkSession.builder.appName("TransactionStreaming").getOrCreate()
+    spark = SparkSession.builder \
+        .appName("TransactionStreaming") \
+        .config("spark.cassandra.connection.host", "cassandra") \
+        .config("spark.cassandra.connection.port", "9042") \
+        .config("spark.cassandra.auth.username", "cassandra") \
+        .config("spark.cassandra.auth.password", "thinh3010") \
+        .config("spark.cassandra.connection.keepAliveMS", "600000") \
+        .getOrCreate()
+    
     spark.sparkContext.setLogLevel("WARN")
 
     df = spark.readStream.format("kafka") \
@@ -67,10 +89,13 @@ def main():
             .select(explode("data_array").alias("data")) \
             .select("data.*")
 
+    df_json = df_json.repartition(3)
+
     query = df_json.writeStream \
             .foreachBatch(process_batch) \
             .outputMode("append") \
             .start()
+            
 
     query.awaitTermination()
 

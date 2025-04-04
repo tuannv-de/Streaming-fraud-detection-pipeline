@@ -765,18 +765,19 @@ scrapeConfigFiles: []
 serverFiles:
   ## Alerts configuration
   ## Ref: https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/
-  alerting_rules.yml: {}
-  # groups:
-  #   - name: Instances
-  #     rules:
-  #       - alert: InstanceDown
-  #         expr: up == 0
-  #         for: 5m
-  #         labels:
-  #           severity: page
-  #         annotations:
-  #           description: '{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 5 minutes.'
-  #           summary: 'Instance {{ $labels.instance }} down'
+  alerting_rules.yml:
+    groups:
+      - name: SuspiciousTransactionAlerts
+        rules:
+          - alert: HighSuspiciousTransactionCount
+            expr: suspicious_transaction_count > 8
+            for: 0s
+            labels:
+              severity: page
+              namespace: streaming-pipeline
+            annotations:
+              description: "Số lượng suspicious_transaction_count đạt {{ $value }}, vượt quá ngưỡng cho phép (8)."
+              summary: "Cảnh báo giao dịch nghi ngờ cao vượt ngưỡng"
   ## DEPRECATED DEFAULT VALUE, unless explicitly naming your files, please use alerting_rules.yml
   alerts: {}
 
@@ -1263,6 +1264,29 @@ alertmanager:
   ## If false, alertmanager will not be installed
   ##
   enabled: true
+
+  config:
+    global:
+      resolve_timeout: 30s
+    route:
+      group_wait: 0s
+      group_interval: 5s
+      repeat_interval: 5m
+      receiver: 'email-receiver'
+      routes:
+      - receiver: 'email-receiver'
+        group_wait: 0s
+        matchers:
+        -  namespace="streaming-pipeline"
+    receivers:
+      - name: 'email-receiver'
+        email_configs:
+        - to: nguyenvantuan.dex@gmail.com
+          from: harrynguyen.de@gmail.com
+          smarthost: smtp.gmail.com:587
+          auth_username: 'harrynguyen.de@gmail.com'
+          auth_identity: 'harrynguyen.de@gmail.com'
+          auth_password: 'culppmzygmkrqynv'
 
   persistence:
     size: 2Gi

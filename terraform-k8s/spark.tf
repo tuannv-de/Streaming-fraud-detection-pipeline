@@ -61,7 +61,7 @@ resource "kubernetes_cluster_role_binding" "spark_role" {
 resource "kubernetes_manifest" "spark_application" {
   depends_on = [ 
     kubernetes_job.create_kafka_topic,
-    helm_release.grafana,
+    helm_release.prometheus,
     helm_release.spark
   ]
 
@@ -81,7 +81,7 @@ resource "kubernetes_manifest" "spark_application" {
       "mainApplicationFile"= "local:///app/spark_stream_processor.py"
       "sparkVersion"       = "3.5.3"
       "sparkConf" = {
-        "spark.jars.packages" = "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.3"
+        "spark.jars.packages" = "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.3,com.datastax.spark:spark-cassandra-connector_2.12:3.5.1"
         "spark.jars.ivy"                   = "/tmp/.ivy"
         "spark.driver.extraJavaOptions"    = "-Divy.cache.dir=/tmp -Divy.home=/tmp"
         "spark.executor.extraJavaOptions"  = "-Divy.cache.dir=/tmp -Divy.home=/tmp"
@@ -97,7 +97,7 @@ resource "kubernetes_manifest" "spark_application" {
         }
         "serviceAccount" = "spark"
         "cores"          = 1
-        "memory"         = "2g"
+        "memory"         = "3g"
         "env" = [
           {
             "name"  = "KAFKA_BROKERCONNECT"
@@ -114,8 +114,8 @@ resource "kubernetes_manifest" "spark_application" {
           "version" = "3.5.3"
         }
         "instances" = 1
-        "cores"     = 1
-        "memory"    = "1g"
+        "cores"     = 2
+        "memory"    = "2g"
         "env" = [
           {
             "name"  = "KAFKA_BROKERCONNECT"
