@@ -4,7 +4,7 @@ Dự án này là một đường ống phát hiện gian lận giao dịch chuy
   
 Nó là một hệ thống giám sát giao dịch chuyển khoản trong ngân hàng, đưa ra cảnh báo cho đội ngũ giám sát hệ thống về giao dịch đáng ngờ, tăng khả năng ứng phó, xử lý nhanh với tình huống xấu và giảm thiểu lừa đảo.    
   
-Nguồn phát dữ liệu là một Realtime API giả lập xuất ra dữ liệu giao dịch chuyển khoản của nhiều người dùng trong thời gian nhất định, mỗi 1s lại trả về một tập giao dịch, thu thập nó bằng Kafka, xử lý nhận diện giao dịch đáng ngờ bằng Spark Streaming, đẩy dữ liệu số giao dịch đáng ngờ lên Pushgateway để Prometheus thu thập, cảnh báo vượt ngưỡng giới hạn số giao dịch đáng ngờ bằng Alert Manager và gửi cảnh báo đến Email, trực quan hoá biểu đồ theo thời gian thực để theo dõi số giao dịch đáng ngờ, lưu dữ liệu vào Cassandra.  
+Nguồn phát dữ liệu là một Realtime API giả lập xuất ra dữ liệu giao dịch chuyển khoản của nhiều người dùng trong thời gian nhất định, mỗi 1s lại trả về một tập giao dịch, thu thập nó bằng Kafka, xử lý nhận diện giao dịch đáng ngờ bằng Spark Streaming, đẩy dữ liệu số giao dịch đáng ngờ lên Pushgateway để Prometheus thu thập, cảnh báo vượt ngưỡng giới hạn số giao dịch đáng ngờ bằng Alert Manager và gửi cảnh báo đến Email, trực quan hoá biểu đồ theo thời gian thực để theo dõi số giao dịch đáng ngờ, lưu dữ liệu vào Cassandra phục vụ build ML model.  
 
 ## **Architecture**
 ![Pipeline Image](https://github.com/user-attachments/assets/1d9bc6df-e5cb-4a3d-9240-38752102421d)
